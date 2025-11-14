@@ -129,7 +129,8 @@ fn render_elem_to_md<'a, W: Write + 'a>(
 }
 
 
-pub async fn fetch(url: &String) -> Result<()> {
+pub async fn fetch(id: &String) -> Result<()> {
+    let url = &format!("https://lexue.bit.edu.cn/mod/programming/view.php?id={}",id);
     println!("Sending get request to {}... ", url);
     let resp = get(url).await?;
     let html = resp.text().await?;
@@ -148,9 +149,12 @@ pub async fn fetch(url: &String) -> Result<()> {
     println!("{}", title);
     fs::create_dir_all(&title)?;
 
-    // create starter files
+    // Create starter files
+
+    // main.c
     fs::write(format!("{}/main.c", title), "// start coding")?;
 
+    // README.md
     let readme = File::create(format!("{}/README.md", title))?;
     let mut readme_writer = BufWriter::new(readme);
 
@@ -164,5 +168,12 @@ pub async fn fetch(url: &String) -> Result<()> {
             }
         }
     }
+
+    // lexue.toml
+    let toml = File::create(format!("{}/lexue.toml", title))?;
+    let mut toml_writer = BufWriter::new(toml);
+    writeln!(toml_writer, "exercise_id = \"{}\"", id)?;
+    writeln!(toml_writer, "lexue_cli_version = \"{}\"",  env!("CARGO_PKG_VERSION"))?;
+
     Ok(())
 }

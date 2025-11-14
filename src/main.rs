@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
 
     match &cli.command {
         Commands::Login { cookie } => login(cookie)?,
-        Commands::Fetch { url } => fetch(url).await?,
+        Commands::Fetch { id } => fetch(id).await?,
         Commands::Submit { path } => {
             println!("Submitting solution from path: {}", path);
             // later: zip and upload
@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
         },
         Commands::Get { url } => {
             let resp = get(url).await?;
-            println!("Server responded with status code: {}", resp.status());
+            println!("Response: \n{}", resp.text().await?);
         }
     }
 

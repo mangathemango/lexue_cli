@@ -14,8 +14,11 @@ pub enum Commands {
         /// The cookie value (MoodleSession)
         cookie: String,
     },
-    /// Fetch programming exercises
-    Fetch { url: String },
+    /// Fetch a programming exercise into a folder
+    Fetch { 
+        // The id of the exercise
+        id: String 
+    },
     /// Submit your finished exercise
     Submit {
         #[arg(short, long)]
