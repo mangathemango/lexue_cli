@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use dirs::home_dir;
 use reqwest::Response;
-use scraper::{ElementRef, Html, Selector};
+use scraper::{ElementRef, Html, Node, Selector};
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -59,6 +59,77 @@ async fn get(url: &str) -> anyhow::Result<Response> {
     Ok(resp)
 }
 
+fn render_elem_to_md<W: Write>(el: &ElementRef, out: &mut W) -> std::io::Result<()> {
+    let tag = el.value().name();
+
+    match tag {
+        "p" => {
+            let txt = el.text().collect::<String>().trim().to_string();
+            if !txt.is_empty() {
+                writeln!(out, "{}\n", txt)?;
+            }
+
+            // recurse into nested elements (like div inside p)
+            for child in el.children() {
+                if let Some(child_el) = ElementRef::wrap(child) {
+                    render_elem_to_md(&child_el, out)?;
+                }
+            }
+        }
+
+        "h3" => {
+            let txt = el.text().collect::<String>().trim().to_string();
+            writeln!(out, "### {}\n", txt)?;
+        }
+
+        "ul" => {
+            for li in el.select(&scraper::Selector::parse("li").unwrap()) {
+                render_elem_to_md(&li, out)?;
+            }
+        }
+
+        "li" => {
+            write!(out, "- ")?;
+            let mut txt = el.text().collect::<String>().trim().to_string();
+            if !txt.is_empty() {
+                writeln!(out, "{}", txt)?;
+            }
+
+            // recurse into *nested* elements inside <li>
+            for child in el.children() {
+                if let Some(child_el) = ElementRef::wrap(child) {
+                    render_elem_to_md(&child_el, out)?;
+                }
+            }
+        }
+
+        "img" => {
+            if let Some(src) = el.value().attr("src") {
+                writeln!(out, "![image]({})\n", src)?;
+            }
+        }
+
+        "div" => {
+            // div contains images, captions, etc.
+            for child in el.children() {
+                if let Some(child_el) = ElementRef::wrap(child) {
+                    render_elem_to_md(&child_el, out)?;
+                }
+            }
+        }
+
+        _ => {
+            // fallback — recurse into children
+            for child in el.children() {
+                if let Some(child_el) = ElementRef::wrap(child) {
+                    render_elem_to_md(&child_el, out)?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -101,39 +172,8 @@ async fn main() -> anyhow::Result<()> {
             if let Some(div) = document.select(&div_sel).next() {
                 // iterate over children
                 for child in div.children() {
-                    if let Some(elem) = child.value().as_element() {
-                        if let Some(elem_ref) = ElementRef::wrap(child) {
-
-                            match elem.name() {
-                                "p" => {
-                                    let txt = elem_ref.text().collect::<String>();
-                                    writeln!(readme_writer, "{}\n", txt)?;
-                                }
-                                "h3" => {
-                                    let txt = elem_ref.text().collect::<String>();
-                                    writeln!(readme_writer, "### {}\n", txt)?;
-                                }
-                                "ul" => {
-                                    for li in elem_ref.select(&Selector::parse("li").unwrap()) {
-                                        let txt = li.text().collect::<String>();
-                                        writeln!(readme_writer, "- {}", txt)?;
-                                    }
-                                }
-                                "div" => {
-                                    for img in elem_ref.select(&Selector::parse("img").unwrap()) {
-                                        if let Some(url) = img.value().attr("src") {
-                                            writeln!(readme_writer, "![image]({})\n", url)?;
-                                        }
-                                    }
-                                    if let Some(p) = elem_ref.select(&Selector::parse("p").unwrap()).next()
-                                    {
-                                        let text = p.text().collect::<String>();
-                                        writeln!(readme_writer, "{}", text)?;
-                                    }
-                                }
-                                _ => (),
-                            }
-                        }
+                    if let Some(elem_ref) = ElementRef::wrap(child) {
+                        render_elem_to_md(&elem_ref, &mut readme_writer)?;
                     }
                 }
             }
