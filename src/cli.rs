@@ -20,10 +20,7 @@ pub enum Commands {
         id: String 
     },
     /// Submit your finished exercise
-    Submit {
-        #[arg(short, long)]
-        path: String,
-    },
+    Submit,
     /// Ping the https://lexue.bit.edu.cn/my/ server
     Ping,
     /// Sends a GET request to the specified url

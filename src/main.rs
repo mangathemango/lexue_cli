@@ -10,6 +10,9 @@ mod fetch;
 use fetch::fetch;
 mod get;
 use get::get;
+mod submit;
+use submit::submit;
+
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -18,10 +21,7 @@ async fn main() -> anyhow::Result<()> {
     match &cli.command {
         Commands::Login { cookie } => login(cookie)?,
         Commands::Fetch { id } => fetch(id).await?,
-        Commands::Submit { path } => {
-            println!("Submitting solution from path: {}", path);
-            // later: zip and upload
-        },
+        Commands::Submit {} => submit().await?,
         Commands::Ping => {
             println!("Pinging Lexue Servers... ");
             let resp = get("https://lexue.bit.edu.cn/my/").await?;

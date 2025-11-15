@@ -1,6 +1,6 @@
 use dirs::home_dir;
-use std::fs;
 use reqwest::Response;
+use std::fs;
 
 pub async fn get(url: &str) -> anyhow::Result<Response> {
     let mut path = home_dir().expect("Could not find home directory");
@@ -8,10 +8,21 @@ pub async fn get(url: &str) -> anyhow::Result<Response> {
     path.push("session.txt");
     let cookie = fs::read_to_string(path)?;
     let client = reqwest::Client::new();
-    let resp: Response = client
+    let maybe_resp = client
         .get(url)
         .header("Cookie", format!("MoodleSession={}", cookie))
         .send()
-        .await?;
-    Ok(resp)
+        .await;
+    match maybe_resp {
+        Ok(resp) => Ok(resp),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("too many redirects") {
+                eprintln!("Session expired! Please run `lexue-cli login <cookie>` again.");
+                std::process::exit(1);
+            }
+
+            return Err(e.into());
+        }
+    }
 }
