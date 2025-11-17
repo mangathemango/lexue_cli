@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Login { cookie } => login(cookie)?,
+        Commands::Login { cookie } => login(cookie).await?,
         Commands::Fetch { id } => fetch(id).await?,
         Commands::Submit {} => submit().await?,
         Commands::Ping => {

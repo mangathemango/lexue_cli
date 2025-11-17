@@ -33,7 +33,7 @@ pub async fn submit() -> Result<()> {
     let sesskey = document
         .select(&Selector::parse("input[name=sesskey]").unwrap())
         .next()
-        .unwrap()
+        .expect("No sesskey found!")
         .value()
         .attr("value")
         .unwrap();
