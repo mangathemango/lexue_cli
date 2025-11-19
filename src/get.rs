@@ -14,11 +14,14 @@ pub async fn get(url: &str) -> anyhow::Result<Response> {
         .send()
         .await;
     match maybe_resp {
-        Ok(resp) => Ok(resp),
+        Ok(resp) => {
+            Ok(resp)
+        },
         Err(e) => {
             let msg = e.to_string();
             if msg.contains("too many redirects") {
-                eprintln!("Session expired! Please run `lexue-cli login <cookie>` again.");
+                eprintln!("{}",e.to_string());
+                eprintln!("Session expired! Please run `lexue-cli login` or `lexue-cli set-cookie  <cookie>` again.");
                 std::process::exit(1);
             }
 

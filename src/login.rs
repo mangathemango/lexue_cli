@@ -1,10 +1,8 @@
 use anyhow::Result;
-use dirs::home_dir;
-use std::fs;
-
 use cookie::Cookie;
 use tiny_http::{Response, Server};
 use url::Url;
+use crate::set_cookie::set_cookie;
 
 pub fn wait_for_ticket() -> anyhow::Result<String> {
     // This might panic and i dont know how to handle Box<dyn Error>
@@ -34,17 +32,9 @@ pub fn wait_for_ticket() -> anyhow::Result<String> {
     Err(anyhow::anyhow!("Server stopped unexpectedly"))
 }
 
-// Save cookie to a file in user's home directory
-fn save_cookie(cookie: &str) -> Result<std::path::PathBuf> {
-    let mut path = home_dir().expect("Could not find home directory");
-    path.push(".lexue_cli");
-    fs::create_dir_all(&path)?;
-    path.push("session.txt");
-    fs::write(path.clone(), cookie)?;
-    Ok(path)
-}
 
-pub async fn login(cookie: &String) -> Result<()> {
+
+pub async fn login() -> Result<()> {
     let server_url = "http://127.0.0.1:56666/callback";
 
     let login_url = format!(
@@ -68,15 +58,14 @@ pub async fn login(cookie: &String) -> Result<()> {
         .await?;
 
     if let Some(cookie_header) = resp.headers().get("set-cookie") {
-        let set_cookie = cookie_header.to_str()?; // header value as &str
-        let parsed = Cookie::parse(set_cookie)?;
+        let parsed = Cookie::parse(cookie_header.to_str()?)?;
 
         let cookie = parsed.value().to_string();
 
         println!(
             "Saved cookie {} at {}",
             cookie,
-            save_cookie(cookie.as_str())?.to_str().unwrap()
+            set_cookie(cookie.as_str())?.to_str().unwrap()
         );
     }
 

@@ -10,10 +10,7 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Log into your Lexue account manually
-    Login {
-        /// The cookie value (MoodleSession)
-        cookie: String,
-    },
+    Login,
     /// Fetch a programming exercise into a folder
     Fetch { 
         // The id of the exercise
@@ -25,4 +22,6 @@ pub enum Commands {
     Ping,
     /// Sends a GET request to the specified url
     Get { url: String },
+    /// Set the cookie of this session
+    SetCookie {cookie: String,},
 }
