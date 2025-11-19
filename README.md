@@ -1,7 +1,7 @@
 # lexue-cli: A Rust-based Lexue Command Line Interface
 
 ## Overview
-`lexue-cli` is a command line interface (CLI) tool written in Rust that allows users to interact with the Lexue platform, which is used by Beijing Institute of Technology to distribute materials and assignments to students. 
+`lexue-cli` is an open source command line interface (CLI) tool written in Rust that allows users to interact with the Lexue platform, which is used by Beijing Institute of Technology to distribute materials and assignments to students. 
 
 ## Purpose
 
@@ -49,3 +49,28 @@ Finally, the question can be submitted using:
 ```bash
 lexue-cli submit
 ```
+
+## Contributing
+
+### Step 1: Fork + Clone the repository
+You can fork this repositiory, clone it to your system, make changes, and submit pull requests. If you're new to this, you can refer to this guide.
+https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
+
+Note: Commit messages and branch name should follow the convention according to these two guides:
+
+Commit messages: https://www.conventionalcommits.org/en/v1.0.0
+
+Branches: https://medium.com/@abhay.pixolo/naming-conventions-for-git-branches-a-cheatsheet-8549feca2534
+
+### Step 2: Install lexue-cli using cargo
+
+```bash
+cargo install --path .
+```
+Running this in the terminal will install lexue-cli to your system. You can then run
+
+```bash
+lexue-cli --help
+```
+
+To view the currently available commands
