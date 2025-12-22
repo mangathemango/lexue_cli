@@ -14,6 +14,8 @@ mod submit;
 use submit::submit;
 mod set_cookie;
 use set_cookie::set_cookie;
+mod open;
+use open::open;
 
 
 #[tokio::main]
@@ -37,6 +39,9 @@ async fn main() -> anyhow::Result<()> {
             set_cookie(cookie)?;
             ()
         },
+        Commands::Open {uri} => {
+            open(uri)?
+        }
     }
 
     Ok(())

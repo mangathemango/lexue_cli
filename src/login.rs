@@ -1,8 +1,10 @@
+use crate::{get, set_cookie::set_cookie};
 use anyhow::Result;
 use cookie::Cookie;
+use reqwest::{cookie::{Jar, CookieStore}, header};
+use std::sync::Arc;
 use tiny_http::{Response, Server};
 use url::Url;
-use crate::set_cookie::set_cookie;
 
 pub fn wait_for_ticket() -> anyhow::Result<String> {
     // This might panic and i dont know how to handle Box<dyn Error>
@@ -32,8 +34,6 @@ pub fn wait_for_ticket() -> anyhow::Result<String> {
     Err(anyhow::anyhow!("Server stopped unexpectedly"))
 }
 
-
-
 pub async fn login() -> Result<()> {
     let server_url = "http://127.0.0.1:56666/callback";
 
@@ -45,11 +45,13 @@ pub async fn login() -> Result<()> {
     webbrowser::open(&login_url)?;
     let ticket = wait_for_ticket()?;
 
+    let jar = Arc::new(Jar::default());
+
     let client = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
+        .cookie_provider(jar.clone())
         .build()?;
 
-    let resp = client
+    client
         .get(format!(
             "https://lexue.bit.edu.cn/login/index.php?ticket={}",
             ticket
@@ -57,17 +59,32 @@ pub async fn login() -> Result<()> {
         .send()
         .await?;
 
-    if let Some(cookie_header) = resp.headers().get("set-cookie") {
-        let parsed = Cookie::parse(cookie_header.to_str()?)?;
+    let resp = client.get("https://lexue.bit.edu.cn/my/").send().await?;
 
-        let cookie = parsed.value().to_string();
-
-        println!(
-            "Saved cookie {} at {}",
-            cookie,
-            set_cookie(cookie.as_str())?.to_str().unwrap()
-        );
+    let url = "https://lexue.bit.edu.cn/".parse::<reqwest::Url>()?;
+    if let Some(cookie_str) = jar.cookies(&url) {
+        let cookie_str = cookie_str.to_str()?;
+        println!("All cookies: {}", cookie_str);
     }
+
+    // 3️⃣ Extract MoodleSession from cookie jar
+    let cookies = resp.headers().get_all(header::SET_COOKIE);
+
+    for c in cookies {
+        let parsed = Cookie::parse(c.to_str()?)?;
+        println!("Found cookie: {:?}", parsed);
+        if parsed.name() == "MoodleSession" {
+            let cookie = parsed.value().to_string();
+            println!(
+                "Saved cookie {} at {}",
+                cookie,
+                set_cookie(cookie.as_str())?.to_str().unwrap()
+            );
+        }
+    }
+
+    println!("Verifying connection...");
+    get("https://lexue.bit.edu.cn/my").await?;
 
     Ok(())
 }

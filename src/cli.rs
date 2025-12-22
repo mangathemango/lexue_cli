@@ -24,4 +24,9 @@ pub enum Commands {
     Get { url: String },
     /// Set the cookie of this session
     SetCookie {cookie: String,},
+    /// Opens a web page on your browser based on an URI
+    Open { 
+        /// The url of the page, e.g "/my", "", "course/view.php?id=*"
+        uri: String 
+    }
 }
